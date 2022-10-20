@@ -5,7 +5,7 @@ let clientIsReady = false;
 
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--unhandled-rejections=strict'] }
+    puppeteer: { headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox', '--unhandled-rejections=strict'] }
 });
 
 client.on('qr', (qr) => {
@@ -31,16 +31,23 @@ app.use(bodyParser.json());
 app.post('/sendMessage', function (req, res) {
     if (!clientIsReady) {
         res.send("Client is not ready yet.").status(400);
+        return;
     }
 
     let number = req.body.number;
+    if (number.length === 9 && number[0] === "9") {
+        number = number.slice(1)
+    }
+    if (number.length === 11 && number[0] === "55") {
+        number = "55" + number.slice(3)
+    }
     if (!number.endsWith("@c.us")) {
         number = number + "@c.us";
     }
-    if (number.lengh === 15) {
+    if (number.length === 13) {
         number = "55" + number;
     }
-    if (number.lengh !== 17) {
+    if (number.length !== 15) {
         res.send("Invalid number.").status(400);
         return;
     }
