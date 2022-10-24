@@ -2,6 +2,8 @@
 
 Simple REST API to send messages through POST requests.
 
+THIS IS AN UNOFFICIAL API!
+
 ## Installation
 
 Inside the project folder, run:
