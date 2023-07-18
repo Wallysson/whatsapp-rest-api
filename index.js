@@ -9,7 +9,7 @@ let clientIsReady = false;
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    headless: false,
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -38,20 +38,45 @@ app.post("/sendMessage", function (req, res) {
     return;
   }
 
-  let number = req.body.number;
+  let number = req.body.number.replace(/\D/g, "");
+  let ddd = req.body.ddd.replace(/\D/g, "");
+  let countryCode = req.body.countryCode.replace(/\D/g, "");
+
+  let completeNumber = countryCode + ddd + number + "@c.us";
+
+  client
+    .sendMessage(completeNumber, req.body.message)
+    .then(() => {
+      res.send("Message sent.").status(200);
+    })
+    .catch((err) => {
+      res.send(err.message).status(500);
+    });
+});
+
+app.post("/sendMessageBR", function (req, res) {
+  if (!clientIsReady) {
+    res.send("Client is not ready yet.").status(400);
+    return;
+  }
+
+  let number = req.body.number.replace(/\D/g, "");
+  let ddd = req.body.ddd.replace(/\D/g, "");
+
   if (number.length === 9 && number[0] === "9") {
     number = number.slice(1);
   }
-  if (number.length === 11 && number[0] === "55") {
-    number = "55" + number.slice(3);
+
+  number = ddd + number;
+  if (number.length === 10) {
+    number = "55" + number;
   }
+
   if (!number.endsWith("@c.us")) {
     number = number + "@c.us";
   }
-  if (number.length === 13) {
-    number = "55" + number;
-  }
-  if (number.length !== 15) {
+
+  if (number.length !== 17) {
     res.send("Invalid number.").status(400);
     return;
   }
