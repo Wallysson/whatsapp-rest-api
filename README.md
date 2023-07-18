@@ -1,4 +1,4 @@
-# whatsapp-rest-api
+# Whatsapp REST API
 
 Simple REST API to send messages through POST requests.
 
