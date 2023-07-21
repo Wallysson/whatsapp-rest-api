@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const app = express();
 
 let clientIsReady = false;
+let qrCode;
 
 const client = new Client({
   authStrategy: new LocalAuth(),
@@ -19,12 +20,17 @@ const client = new Client({
 });
 
 client.on("qr", (qr) => {
+  qrCode = qr;
   qrcode.generate(qr, { small: true });
 });
 
 client.on("ready", () => {
   clientIsReady = true;
   console.log("Client is ready!");
+});
+
+client.on("disconnected", () => {
+  clientIsReady = false;
 });
 
 client.initialize();
@@ -91,7 +97,23 @@ app.post("/sendMessageBR", function (req, res) {
     });
 });
 
-const porta = 6000;
+app.get("/getStatus", function (req, res) {
+  if (clientIsReady) {
+    res.status(200).send(clientIsReady);
+  } else {
+    res.status(503).send(clientIsReady);
+  }
+});
+
+app.get("/generateQrCode", function (req, res) {
+  if (qrCode) {
+    res.status(200).send(qrCode);
+  } else {
+    res.status(404).send("QR Code not available.");
+  }
+});
+
+const porta = 8000;
 app.listen(porta, () => {
   console.log("Http server running on port " + porta);
 });
