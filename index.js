@@ -31,6 +31,11 @@ client.on("ready", () => {
 
 client.on("disconnected", () => {
   clientIsReady = false;
+  console.log("Client is disconnected!");
+});
+
+client.on("authenticated", () => {
+  console.log("Client is authenticated!");
 });
 
 client.initialize();
@@ -40,7 +45,7 @@ app.use(bodyParser.json());
 
 app.post("/sendMessage", function (req, res) {
   if (!clientIsReady) {
-    res.send("Client is not ready yet.").status(400);
+    res.status(400).json("Client is not ready yet.");
     return;
   }
 
@@ -53,16 +58,17 @@ app.post("/sendMessage", function (req, res) {
   client
     .sendMessage(completeNumber, req.body.message)
     .then(() => {
-      res.send("Message sent.").status(200);
+      res.status(200).json("Message sent.");
     })
     .catch((err) => {
-      res.send(err.message).status(500);
+      res.status(500).json(err.message);
     });
 });
 
 app.post("/sendMessageBR", function (req, res) {
+  console.log("clientIsReady", clientIsReady);
   if (!clientIsReady) {
-    res.send("Client is not ready yet.").status(400);
+    res.status(400).json("WhatsApp não conectado, reconecte-o.");
     return;
   }
 
@@ -83,33 +89,29 @@ app.post("/sendMessageBR", function (req, res) {
   }
 
   if (number.length !== 17) {
-    res.send("Invalid number.").status(400);
+    res.status(400).json("Invalid number.");
     return;
   }
 
   client
     .sendMessage(number, req.body.message)
     .then(() => {
-      res.send("Message sent.").status(200);
+      res.status(200).json("Message sent.");
     })
     .catch((err) => {
-      res.send(err.message).status(500);
+      res.status(500).json(err.message);
     });
 });
 
 app.get("/getStatus", function (req, res) {
-  if (clientIsReady) {
-    res.status(200).send(clientIsReady);
-  } else {
-    res.status(503).send(clientIsReady);
-  }
+  res.status(200).json(clientIsReady);
 });
 
 app.get("/generateQrCode", function (req, res) {
   if (qrCode) {
-    res.status(200).send(qrCode);
+    res.status(200).json(qrCode);
   } else {
-    res.status(404).send("QR Code not available.");
+    res.status(404).json("QR Code not available.");
   }
 });
 
