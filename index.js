@@ -1,8 +1,11 @@
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const express = require("express");
 const bodyParser = require("body-parser");
+const fileUpload = require("express-fileupload");
 const app = express();
+const fs = require("fs");
+const isValidPhoneNumber = require("./helpers/is-valid-phone-number");
 
 let clientIsReady = false;
 let qrCode;
@@ -58,7 +61,7 @@ app.post("/sendMessage", function (req, res) {
   client
     .sendMessage(completeNumber, req.body.message)
     .then(() => {
-      res.status(200).json("Message sent.");
+      res.status(200).json("Mensagem enviada.");
     })
     .catch((err) => {
       res.status(500).json(err.message);
@@ -66,7 +69,6 @@ app.post("/sendMessage", function (req, res) {
 });
 
 app.post("/sendMessageBR", function (req, res) {
-  console.log("clientIsReady", clientIsReady);
   if (!clientIsReady) {
     res.status(400).json("WhatsApp não conectado, reconecte-o.");
     return;
@@ -89,14 +91,14 @@ app.post("/sendMessageBR", function (req, res) {
   }
 
   if (number.length !== 17) {
-    res.status(400).json("Invalid number.");
+    res.status(400).json("Número inválido.");
     return;
   }
 
   client
     .sendMessage(number, req.body.message)
     .then(() => {
-      res.status(200).json("Message sent.");
+      res.status(200).json("Mensagem enviada.");
     })
     .catch((err) => {
       res.status(500).json(err.message);
@@ -111,7 +113,45 @@ app.get("/generateQrCode", function (req, res) {
   if (qrCode) {
     res.status(200).json(qrCode);
   } else {
-    res.status(404).json("QR Code not available.");
+    res.status(404).json("QR Code não disponível.");
+  }
+});
+
+app.post("/sendPDF", fileUpload(), async (req, res) => {
+  try {
+    if (!req.files) {
+      console.log("chegou aqui né");
+      return res.status(400).json({ error: "Nenhum arquivo enviado." });
+    }
+
+    let number = req.query.number.replace(/\D/g, "");
+    let ddd = req.query.ddd.replace(/\D/g, "");
+
+    const formattedNumber = isValidPhoneNumber(ddd, number);
+    if (!formattedNumber) {
+      return res.status(400).json({ error: "Número inválido." });
+    }
+
+    const file = req.files.file;
+    const nomeArquivo = file.name;
+
+    await file.mv(`./uploads/${nomeArquivo}`);
+
+    const media = MessageMedia.fromFilePath(`./uploads/${nomeArquivo}`);
+
+    client
+      .sendMessage(formattedNumber, media)
+      .then(() => {
+        fs.unlinkSync(`./uploads/${nomeArquivo}`);
+        res.status(200).json({ message: "Arquivo enviado com sucesso." });
+      })
+      .catch((err) => {
+        console.error("Erro ao enviar arquivo:", err);
+        res.status(500).json({ error: "Erro ao enviar arquivo." });
+      });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ error: "Um erro ocorreu." });
   }
 });
 
