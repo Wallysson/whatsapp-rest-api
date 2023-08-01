@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const app = express();
 const fs = require("fs");
-const isValidPhoneNumber = require("./helpers/is-valid-phone-number");
+const parseNumber = require("./helpers/parse-number");
 
 let clientIsReady = false;
 let qrCode;
@@ -52,51 +52,14 @@ app.post("/sendMessage", function (req, res) {
     return;
   }
 
-  let number = req.body.number.replace(/\D/g, "");
-  let ddd = req.body.ddd.replace(/\D/g, "");
-  let countryCode = req.body.countryCode.replace(/\D/g, "");
+  let number = req.body.number;
+  let ddd = req.body.ddd;
+  let countryCode = req.body.countryCode;
 
-  let completeNumber = countryCode + ddd + number + "@c.us";
+  let completeNumber = parseNumber(countryCode, ddd, number);
 
   client
     .sendMessage(completeNumber, req.body.message)
-    .then(() => {
-      res.status(200).json("Mensagem enviada.");
-    })
-    .catch((err) => {
-      res.status(500).json(err.message);
-    });
-});
-
-app.post("/sendMessageBR", function (req, res) {
-  if (!clientIsReady) {
-    res.status(400).json("WhatsApp não conectado, reconecte-o.");
-    return;
-  }
-
-  let number = req.body.number.replace(/\D/g, "");
-  let ddd = req.body.ddd.replace(/\D/g, "");
-
-  if (number.length === 9 && number[0] === "9") {
-    number = number.slice(1);
-  }
-
-  number = ddd + number;
-  if (number.length === 10) {
-    number = "55" + number;
-  }
-
-  if (!number.endsWith("@c.us")) {
-    number = number + "@c.us";
-  }
-
-  if (number.length !== 17) {
-    res.status(400).json("Número inválido.");
-    return;
-  }
-
-  client
-    .sendMessage(number, req.body.message)
     .then(() => {
       res.status(200).json("Mensagem enviada.");
     })
@@ -120,17 +83,14 @@ app.get("/generateQrCode", function (req, res) {
 app.post("/sendPDF", fileUpload(), async (req, res) => {
   try {
     if (!req.files) {
-      console.log("chegou aqui né");
       return res.status(400).json({ error: "Nenhum arquivo enviado." });
     }
 
-    let number = req.query.number.replace(/\D/g, "");
-    let ddd = req.query.ddd.replace(/\D/g, "");
+    let number = req.query.number;
+    let ddd = req.query.ddd;
+    let countryCode = req.body.countryCode;
 
-    const formattedNumber = isValidPhoneNumber(ddd, number);
-    if (!formattedNumber) {
-      return res.status(400).json({ error: "Número inválido." });
-    }
+    const formattedNumber = parseNumber(countryCode, ddd, number);
 
     const file = req.files.file;
     const nomeArquivo = file.name;
