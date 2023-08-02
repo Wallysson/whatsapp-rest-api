@@ -88,7 +88,7 @@ app.post("/sendPDF", fileUpload(), async (req, res) => {
 
     let number = req.query.number;
     let ddd = req.query.ddd;
-    let countryCode = req.body.countryCode;
+    let countryCode = req.query.countryCode;
 
     const formattedNumber = parseNumber(countryCode, ddd, number);
 
