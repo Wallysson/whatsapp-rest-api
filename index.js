@@ -29,6 +29,11 @@ client.on("qr", (qr) => {
 
 client.on("ready", () => {
   clientIsReady = true;
+  // client.getChats().then((chats) => {
+  //   chatEncontrado = chats.find((chat) => chat.name === "ED-Dev");
+
+  //   console.log(chatEncontrado);
+  // });
   console.log("Client is ready!");
 });
 
@@ -112,6 +117,22 @@ app.post("/sendPDF", fileUpload(), async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ error: "Um erro ocorreu." });
+  }
+});
+
+app.post("/sendMessageGroup", async (req, res) => {
+  const grupoId = "here put your group id";
+  const message = req.body.message;
+  try {
+    const groupChat = await client.getChatById(grupoId);
+
+    if (!groupChat) {
+      console.error("Unable to access the group.");
+    }
+
+    await groupChat.sendMessage(message);
+  } catch (error) {
+    console.error("Error:", error);
   }
 });
 
